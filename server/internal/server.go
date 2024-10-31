@@ -49,7 +49,7 @@ func handleConnection(conn net.Conn) {
 		}
 		packet = append(packet, tmp...)
 
-		fmt.Printf("Received packet from %s: %s\n", conn.RemoteAddr().String(), tmp)
+		fmt.Printf("Received packet from %s: %s\n", conn.RemoteAddr().String(), packet)
 	}
 
 }
