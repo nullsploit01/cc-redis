@@ -10,13 +10,13 @@ type Server struct {
 	port string
 }
 
-func InitServer(port string) {
-	s := &Server{port: port}
-	s.StartServer()
+func InitServer(port string) *Server {
+	return &Server{port: port}
 }
 
-func (s *Server) StartServer() {
+func (s *Server) StartServer() error {
 	l, err := net.Listen("tcp", ":"+s.port)
+	fmt.Printf("Listening on port %s\n", s.port)
 	if err != nil {
 		panic(err)
 	}
@@ -25,8 +25,7 @@ func (s *Server) StartServer() {
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 		go handleConnection(c)
 	}
@@ -40,7 +39,7 @@ func handleConnection(conn net.Conn) {
 	tmp := make([]byte, 4096)
 
 	for {
-		_, err := conn.Read(packet)
+		_, err := conn.Read(tmp)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("Error reading from client:", err)
@@ -49,5 +48,8 @@ func handleConnection(conn net.Conn) {
 			break
 		}
 		packet = append(packet, tmp...)
+
+		fmt.Printf("Received packet from %s: %s\n", conn.RemoteAddr().String(), tmp)
 	}
+
 }

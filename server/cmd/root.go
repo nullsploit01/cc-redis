@@ -3,8 +3,11 @@ package cmd
 import (
 	"os"
 
+	"github.com/nullsploit01/cc-redis/server/internal"
 	"github.com/spf13/cobra"
 )
+
+var port string
 
 var rootCmd = &cobra.Command{
 	Use:   "server",
@@ -15,6 +18,11 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		s := internal.InitServer(port)
+		s.StartServer()
+	},
 }
 
 func Execute() {
@@ -25,5 +33,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().StringVarP(&port, "port", "p", "6379", "Port to run server on")
 }
