@@ -70,7 +70,17 @@ func (c *CLI) Start() error {
 }
 
 func (c *CLI) SendCommand(command string) error {
-	_, err := c.conn.Write([]byte(command + "\r\n"))
+	parts := strings.Fields(command)
+	if len(parts) == 0 {
+		return nil
+	}
+
+	respCommand := fmt.Sprintf("*%d\r\n", len(parts))
+	for _, part := range parts {
+		respCommand += fmt.Sprintf("$%d\r\n%s\r\n", len(part), part)
+	}
+
+	_, err := c.conn.Write([]byte(respCommand))
 	return err
 }
 
