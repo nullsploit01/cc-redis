@@ -41,7 +41,7 @@ func handleConnection(conn net.Conn) {
 	fmt.Printf("Accepted connection from %s\n", conn.RemoteAddr().String())
 
 	for {
-		line, err := readRespCommand(reader)
+		command, err := readRespCommand(reader)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("Error reading from client:", err)
@@ -49,17 +49,74 @@ func handleConnection(conn net.Conn) {
 			break
 		}
 
-		if strings.TrimSpace(line) == "" {
+		if strings.TrimSpace(command) == "" {
 			continue
 		}
-
-		response := processCommand(line)
+		response := processCommand(command)
 		_, err = conn.Write([]byte(response + "\r\n"))
 		if err != nil {
 			fmt.Println("Error writing to client:", err)
 			break
 		}
 	}
+}
+
+func readRespCommand(reader *bufio.Reader) (string, error) {
+	expectedLines := 0
+	var commands []string
+
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+
+		line = strings.TrimRight(line, "\r\n")
+
+		if expectedLines == 0 {
+			if strings.HasPrefix(line, "*") {
+				count, err := strconv.Atoi(line[1:])
+				if err != nil {
+					return "", err
+				}
+				expectedLines = count
+				continue
+			} else {
+				commands = append(commands, line)
+				break
+			}
+		} else {
+			if strings.HasPrefix(line, "$") {
+				size, err := strconv.Atoi(line[1:])
+				if err != nil || size < 0 {
+					return "", fmt.Errorf("invalid bulk string size")
+				}
+
+				if size >= 0 {
+					valueLine, err := reader.ReadString('\n')
+					if err != nil {
+						return "", err
+					}
+
+					valueLine = strings.TrimRight(valueLine, "\r\n")
+					commands = append(commands, valueLine)
+				} else {
+					commands = append(commands, "")
+				}
+
+				expectedLines -= 1
+			} else {
+				commands = append(commands, line)
+				expectedLines -= 1
+			}
+		}
+
+		if expectedLines <= 0 {
+			break
+		}
+	}
+
+	return strings.Join(commands, " "), nil
 }
 
 func processCommand(command string) string {
@@ -97,32 +154,32 @@ func processCommand(command string) string {
 	}
 }
 
-func readRespCommand(reader *bufio.Reader) (string, error) {
-	var fullCommand string
-	arrayCount := -1
-	readLines := 0
+// func readRespCommand(reader *bufio.Reader) (string, error) {
+// 	var fullCommand string
+// 	arrayCount := -1
+// 	readLines := 0
 
-	for {
-		part, err := reader.ReadString('\n')
-		if err != nil {
-			return "", err
-		}
+// 	for {
+// 		part, err := reader.ReadString('\n')
+// 		if err != nil {
+// 			return "", err
+// 		}
 
-		fullCommand += part
-		readLines++
+// 		fullCommand += part
+// 		readLines++
 
-		if arrayCount == -1 && strings.HasPrefix(part, "*") {
-			count, err := strconv.Atoi(strings.TrimSpace(part[1:]))
-			if err != nil {
-				return "", err
-			}
-			arrayCount = count * 2 // each command has 2 parts, length and payload
-		}
+// 		if arrayCount == -1 && strings.HasPrefix(part, "*") {
+// 			count, err := strconv.Atoi(strings.TrimSpace(part[1:]))
+// 			if err != nil {
+// 				return "", err
+// 			}
+// 			arrayCount = count * 2 // each command has 2 parts, length and payload
+// 		}
 
-		if arrayCount != -1 && readLines >= arrayCount {
-			break
-		}
-	}
+// 		if arrayCount != -1 && readLines >= arrayCount {
+// 			break
+// 		}
+// 	}
 
-	return strings.TrimRight(fullCommand, "\r\n"), nil
-}
+// 	return strings.TrimRight(fullCommand, "\r\n"), nil
+// }
