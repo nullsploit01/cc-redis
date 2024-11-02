@@ -75,5 +75,38 @@ func (c *CLI) SendCommand(command string) error {
 }
 
 func (c *CLI) ReadResponse() (string, error) {
-	return c.reader.ReadString('\n')
+	resp, err := c.reader.ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("error reading response: %s", err)
+	}
+
+	resp = strings.TrimSuffix(resp, "\r\n")
+	if resp == "" {
+		return "", fmt.Errorf("empty response from server")
+	}
+
+	switch resp[0] {
+	case '+':
+		return strings.TrimPrefix(resp, "+"), nil
+
+	case '-':
+		return "Error: " + strings.TrimPrefix(resp, "-"), nil
+
+	case ':':
+		return strings.TrimPrefix(resp, ":"), nil
+
+	case '$':
+		if len(resp) > 1 && resp[1] == '-' {
+			return "Nil", nil
+		}
+
+		if content, err := c.reader.ReadString('\n'); err == nil {
+			return strings.TrimSuffix(content, "\r\n"), nil
+		}
+
+	case '*':
+		return strings.TrimPrefix(resp, "*"), nil
+	}
+
+	return "Unrecognized response: " + resp, nil
 }
