@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -40,15 +42,16 @@ func handleConnection(conn net.Conn) {
 	fmt.Printf("Accepted connection from %s\n", conn.RemoteAddr().String())
 
 	for {
-		command, err := reader.ReadString('\n')
+		line, err := readRespCommand(reader)
+		log.Println(line)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("Error reading from client:", err)
 			}
 			break
 		}
-		command = strings.TrimSpace(command)
-		response := processCommand(command)
+
+		response := processCommand(line)
 		_, err = conn.Write([]byte(response + "\r\n"))
 		if err != nil {
 			fmt.Println("Error writing to client:", err)
@@ -90,4 +93,34 @@ func processCommand(command string) string {
 	default:
 		return fmt.Sprintf("-ERR unknown command '%s'", parts[0])
 	}
+}
+
+func readRespCommand(reader *bufio.Reader) (string, error) {
+	var fullCommand string
+	arrayCount := -1
+	readLines := 0
+
+	for {
+		part, err := reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+
+		fullCommand += part
+		readLines++
+
+		if arrayCount == -1 && strings.HasPrefix(part, "*") {
+			count, err := strconv.Atoi(strings.TrimSpace(part[1:]))
+			if err != nil {
+				return "", err
+			}
+			arrayCount = count * 2 // each command has 2 parts, length and payload
+		}
+
+		if arrayCount != -1 && readLines >= arrayCount {
+			break
+		}
+	}
+
+	return strings.TrimRight(fullCommand, "\r\n"), nil
 }

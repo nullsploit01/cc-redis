@@ -54,7 +54,7 @@ func (c *CLI) Start() error {
 			break
 		}
 
-		if err := c.SendCommand(command); err != nil {
+		if err := c.SendCommand(strings.TrimSpace(command)); err != nil {
 			return fmt.Errorf("could not send command: %s", err)
 		}
 
@@ -115,7 +115,7 @@ func (c *CLI) ReadResponse() (string, error) {
 		}
 
 	case '*':
-		return strings.TrimPrefix(resp, "*"), nil
+		return "Array response (parsing not implemented)", nil
 	}
 
 	return "Unrecognized response: " + resp, nil
