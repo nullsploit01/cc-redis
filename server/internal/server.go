@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -43,12 +42,15 @@ func handleConnection(conn net.Conn) {
 
 	for {
 		line, err := readRespCommand(reader)
-		log.Println(line)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("Error reading from client:", err)
 			}
 			break
+		}
+
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
 
 		response := processCommand(line)

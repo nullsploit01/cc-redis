@@ -49,6 +49,10 @@ func (c *CLI) Start() error {
 		}
 
 		command := scanner.Text()
+		if strings.TrimSpace(command) == "" {
+			continue
+		}
+
 		if strings.ToUpper(command) == "QUIT" {
 			fmt.Println("Bye!")
 			break
