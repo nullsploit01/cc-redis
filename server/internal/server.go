@@ -62,61 +62,80 @@ func handleConnection(conn net.Conn) {
 }
 
 func readRespCommand(reader *bufio.Reader) (string, error) {
-	expectedLines := 0
-	var commands []string
+	var result []string
 
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			return "", err
 		}
-
 		line = strings.TrimRight(line, "\r\n")
 
-		if expectedLines == 0 {
-			if strings.HasPrefix(line, "*") {
-				count, err := strconv.Atoi(line[1:])
-				if err != nil {
-					return "", err
-				}
-				expectedLines = count
-				continue
-			} else {
-				commands = append(commands, line)
-				break
+		if strings.HasPrefix(line, "*") {
+			numElements, err := strconv.Atoi(line[1:])
+			if err != nil {
+				return "", fmt.Errorf("invalid array count: %v", err)
 			}
+			elements, err := readArrayElements(reader, numElements)
+			if err != nil {
+				return "", err
+			}
+			result = append(result, elements...)
+			break // Assuming array is always the entire command
+		} else if strings.HasPrefix(line, "$") {
+			bulkString, err := readBulkString(reader, line)
+			if err != nil {
+				return "", err
+			}
+			result = append(result, bulkString)
+			continue
 		} else {
-			if strings.HasPrefix(line, "$") {
-				size, err := strconv.Atoi(line[1:])
-				if err != nil || size < 0 {
-					return "", fmt.Errorf("invalid bulk string size")
-				}
-
-				if size >= 0 {
-					valueLine, err := reader.ReadString('\n')
-					if err != nil {
-						return "", err
-					}
-
-					valueLine = strings.TrimRight(valueLine, "\r\n")
-					commands = append(commands, valueLine)
-				} else {
-					commands = append(commands, "")
-				}
-
-				expectedLines -= 1
-			} else {
-				commands = append(commands, line)
-				expectedLines -= 1
-			}
-		}
-
-		if expectedLines <= 0 {
-			break
+			result = append(result, line)
+			continue
 		}
 	}
 
-	return strings.Join(commands, " "), nil
+	return strings.Join(result, " "), nil
+}
+
+func readArrayElements(reader *bufio.Reader, count int) ([]string, error) {
+	var elements []string
+	for i := 0; i < count; i++ {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
+		line = strings.TrimRight(line, "\r\n")
+
+		if strings.HasPrefix(line, "$") {
+			bulkString, err := readBulkString(reader, line)
+			if err != nil {
+				return nil, err
+			}
+			elements = append(elements, bulkString)
+		} else {
+			elements = append(elements, line)
+		}
+	}
+	return elements, nil
+}
+
+func readBulkString(reader *bufio.Reader, initialLine string) (string, error) {
+	size, err := strconv.Atoi(initialLine[1:])
+	if err != nil {
+		return "", fmt.Errorf("invalid bulk string size: %v", err)
+	}
+
+	if size < 0 {
+		return "", nil // RESP null bulk string
+	}
+
+	valueLine, err := reader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimRight(valueLine, "\r\n"), nil
 }
 
 func processCommand(command string) string {
@@ -126,7 +145,7 @@ func processCommand(command string) string {
 		return "-ERR no command received"
 	}
 
-	switch parts[0] {
+	switch strings.ToUpper(parts[0]) {
 
 	case "PING":
 		return "+PONG"
