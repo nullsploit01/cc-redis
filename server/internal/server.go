@@ -7,14 +7,20 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Server struct {
-	port string
+	port  string
+	store map[string]string
+	mu    sync.RWMutex
 }
 
 func InitServer(port string) *Server {
-	return &Server{port: port}
+	return &Server{
+		port:  port,
+		store: make(map[string]string),
+	}
 }
 
 func (s *Server) StartServer() error {
@@ -31,17 +37,17 @@ func (s *Server) StartServer() error {
 			fmt.Println("Error accepting connection:", err)
 			continue
 		}
-		go handleConnection(c)
+		go s.handleConnection(c)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	fmt.Printf("Accepted connection from %s\n", conn.RemoteAddr().String())
 
 	for {
-		command, err := readRespCommand(reader)
+		command, err := s.readRespCommand(reader)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("Error reading from client:", err)
@@ -52,7 +58,7 @@ func handleConnection(conn net.Conn) {
 		if strings.TrimSpace(command) == "" {
 			continue
 		}
-		response := processCommand(command)
+		response := s.processCommand(command)
 		_, err = conn.Write([]byte(response + "\r\n"))
 		if err != nil {
 			fmt.Println("Error writing to client:", err)
@@ -61,7 +67,7 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func readRespCommand(reader *bufio.Reader) (string, error) {
+func (s *Server) readRespCommand(reader *bufio.Reader) (string, error) {
 	var result []string
 
 	for {
@@ -138,7 +144,7 @@ func readBulkString(reader *bufio.Reader, initialLine string) (string, error) {
 	return strings.TrimRight(valueLine, "\r\n"), nil
 }
 
-func processCommand(command string) string {
+func (s *Server) processCommand(command string) string {
 	parts := strings.Fields(command)
 
 	if len(parts) == 0 {
@@ -160,13 +166,23 @@ func processCommand(command string) string {
 		if len(parts) != 3 {
 			return "-ERR wrong number of arguments for 'SET' command"
 		}
+		s.mu.Lock()
+		s.store[parts[1]] = parts[2]
+		s.mu.Unlock()
 		return "+OK"
 
 	case "GET":
 		if len(parts) != 2 {
 			return "-ERR wrong number of arguments for 'GET' command"
 		}
-		return "$-1"
+
+		s.mu.RLock()
+		value, ok := s.store[parts[1]]
+		s.mu.RUnlock()
+		if !ok {
+			return "$-1"
+		}
+		return "$" + strconv.Itoa(len(value)) + "\r\n" + value
 
 	default:
 		return fmt.Sprintf("-ERR unknown command '%s'", parts[0])

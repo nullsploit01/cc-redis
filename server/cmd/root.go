@@ -21,7 +21,10 @@ to quickly create a Cobra application.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		s := internal.InitServer(port)
-		s.StartServer()
+		err := s.StartServer()
+		if err != nil {
+			cmd.PrintErrln(err.Error())
+		}
 	},
 }
 
