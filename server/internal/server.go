@@ -184,6 +184,15 @@ func (s *Server) processCommand(command string) string {
 		}
 		return "$" + strconv.Itoa(len(value)) + "\r\n" + value
 
+	case "DEL":
+		if len(parts) != 2 {
+			return "-ERR wrong number of arguments for 'DEL' command"
+		}
+		s.mu.Lock()
+		delete(s.store, parts[1])
+		s.mu.Unlock()
+		return "+OK"
+
 	default:
 		return fmt.Sprintf("-ERR unknown command '%s'", parts[0])
 	}
