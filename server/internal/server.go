@@ -172,33 +172,3 @@ func processCommand(command string) string {
 		return fmt.Sprintf("-ERR unknown command '%s'", parts[0])
 	}
 }
-
-// func readRespCommand(reader *bufio.Reader) (string, error) {
-// 	var fullCommand string
-// 	arrayCount := -1
-// 	readLines := 0
-
-// 	for {
-// 		part, err := reader.ReadString('\n')
-// 		if err != nil {
-// 			return "", err
-// 		}
-
-// 		fullCommand += part
-// 		readLines++
-
-// 		if arrayCount == -1 && strings.HasPrefix(part, "*") {
-// 			count, err := strconv.Atoi(strings.TrimSpace(part[1:]))
-// 			if err != nil {
-// 				return "", err
-// 			}
-// 			arrayCount = count * 2 // each command has 2 parts, length and payload
-// 		}
-
-// 		if arrayCount != -1 && readLines >= arrayCount {
-// 			break
-// 		}
-// 	}
-
-// 	return strings.TrimRight(fullCommand, "\r\n"), nil
-// }
