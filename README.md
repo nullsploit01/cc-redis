@@ -24,11 +24,12 @@ Before running CC-Redis, ensure you have the following installed:
 
 To install CC-Redis, follow these steps:
 
-````bash
+```bash
 git clone https://github.com/nullsploit01/cc-redis.git
 cd cc-redis
 go build -o ccredis-server ./server
 go build -o ccredis-cli ./cli
+```
 
 ## Usage
 
@@ -36,7 +37,7 @@ To start the Redis server, run:
 
 ```bash
 ./ccredis-server --port 6379 --host localhost
-````
+```
 
 To connect to the server and enter interactive mode, use:
 
