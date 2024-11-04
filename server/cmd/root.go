@@ -10,14 +10,15 @@ import (
 var port string
 
 var rootCmd = &cobra.Command{
-	Use:   "server",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Use:   "ccredis-server",
+	Short: "Launches a custom Redis server",
+	Long: `This command initiates a custom Redis server tailored for enhanced performance and reliability. The server configuration allows for detailed customization including port adjustments to suit various deployment environments. 
+		Examples of using this application include:
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+		- Launching the server with default settings.
+		- Setting a custom port for the server operations.
+
+		Cobra is a powerful CLI library for Go that simplifies creating command line applications. This tool leverages Cobra to provide a robust, easy-to-use interface for running and managing your custom Redis server.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		s := internal.InitServer(port)
