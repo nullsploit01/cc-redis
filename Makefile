@@ -1,5 +1,11 @@
-redis-server:
-	cd ./server && go run .
+build-server:
+	cd ./server && go build -o ccredis-server
 
-redis-cli:
-	cd ./cli && go run .
+build-cli:
+	cd ./cli && go build -o ccredis-cli
+
+run-server: build-server
+	cd ./server && ./ccredis-server
+
+run-cli: build-cli 
+	cd ./cli && ./ccredis-cli
