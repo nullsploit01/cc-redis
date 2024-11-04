@@ -12,13 +12,15 @@ var port string
 
 var rootCmd = &cobra.Command{
 	Use:   "ccredis-cli",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "Command line interface for managing custom Redis server",
+	Long: `ccredis-cli is a command line interface designed to manage and interact with a custom Redis server. It provides comprehensive tools for monitoring, configuring, and controlling the server, ensuring optimal performance and ease of use.
+		Examples of using ccredic-cli include:
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+		- Connecting to the Redis server on the default host and port:
+		$ ccredic-cli
+
+		- Specifying a custom port and host for the server:
+		$ ccredic-cli --port 6380 --host 192.168.1.10`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		c := internal.NewCLI()

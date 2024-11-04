@@ -12,13 +12,17 @@ var port string
 var rootCmd = &cobra.Command{
 	Use:   "ccredis-server",
 	Short: "Launches a custom Redis server",
-	Long: `This command initiates a custom Redis server tailored for enhanced performance and reliability. The server configuration allows for detailed customization including port adjustments to suit various deployment environments. 
+	Long: `ccredis-server initiates a custom Redis server tailored for enhanced performance and reliability. The server configuration allows for customization, including specifying a custom port to suit various deployment environments. 
+
 		Examples of using this application include:
 
-		- Launching the server with default settings.
-		- Setting a custom port for the server operations.
+		- Launching the server with default settings (host: localhost, port: 6379):
+		$ ccredis-server
 
-		Cobra is a powerful CLI library for Go that simplifies creating command line applications. This tool leverages Cobra to provide a robust, easy-to-use interface for running and managing your custom Redis server.`,
+		- Specifying a custom port for the server:
+		$ ccredis-server --port 6380
+
+		This tool provides a user-friendly interface for configuring and managing your Redis server, enabling easy deployment and flexibility.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		s := internal.InitServer(port)
