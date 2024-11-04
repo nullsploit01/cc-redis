@@ -15,8 +15,9 @@ Before running CC-Redis, ensure you have the following installed:
 
 ## Features
 
-- Start a Redis server with configurable options for port and host.
-- Support for core Redis commands like `SET`, `GET`, `DEL`, `PING`, and `ECHO`.
+- Interactive CLI mode for executing Redis commands like `SET`, `GET`, `DEL`, `PING`, and `ECHO`.
+- Communication via **RESP (REdis Serialization Protocol)**, making it compatible with Redis clients.
+- Configurable options for server port and host.
 - Benchmark testing for server performance.
 
 ## Installation
